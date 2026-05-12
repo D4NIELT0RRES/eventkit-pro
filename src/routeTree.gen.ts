@@ -14,6 +14,15 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedWorkOrdersRouteImport } from './routes/_authenticated/work-orders'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
+import { Route as AuthenticatedMovementsRouteImport } from './routes/_authenticated/movements'
+import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
+import { Route as AuthenticatedKitsRouteImport } from './routes/_authenticated/kits'
+import { Route as AuthenticatedEquipmentsRouteImport } from './routes/_authenticated/equipments'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -39,34 +48,131 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedWorkOrdersRoute = AuthenticatedWorkOrdersRouteImport.update({
+  id: '/work-orders',
+  path: '/work-orders',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMovementsRoute = AuthenticatedMovementsRouteImport.update({
+  id: '/movements',
+  path: '/movements',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMaintenanceRoute =
+  AuthenticatedMaintenanceRouteImport.update({
+    id: '/maintenance',
+    path: '/maintenance',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedKitsRoute = AuthenticatedKitsRouteImport.update({
+  id: '/kits',
+  path: '/kits',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedEquipmentsRoute = AuthenticatedEquipmentsRouteImport.update({
+  id: '/equipments',
+  path: '/equipments',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedRoute
+  '/': typeof AuthenticatedIndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/equipments': typeof AuthenticatedEquipmentsRoute
+  '/kits': typeof AuthenticatedKitsRoute
+  '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/movements': typeof AuthenticatedMovementsRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/work-orders': typeof AuthenticatedWorkOrdersRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof AuthenticatedRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/equipments': typeof AuthenticatedEquipmentsRoute
+  '/kits': typeof AuthenticatedKitsRoute
+  '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/movements': typeof AuthenticatedMovementsRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/users': typeof AuthenticatedUsersRoute
+  '/work-orders': typeof AuthenticatedWorkOrdersRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_authenticated': typeof AuthenticatedRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_authenticated/equipments': typeof AuthenticatedEquipmentsRoute
+  '/_authenticated/kits': typeof AuthenticatedKitsRoute
+  '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/_authenticated/movements': typeof AuthenticatedMovementsRoute
+  '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
+  '/_authenticated/work-orders': typeof AuthenticatedWorkOrdersRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/forgot-password' | '/login' | '/reset-password' | '/signup'
+  fullPaths:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
+    | '/equipments'
+    | '/kits'
+    | '/maintenance'
+    | '/movements'
+    | '/schedule'
+    | '/settings'
+    | '/users'
+    | '/work-orders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/forgot-password' | '/login' | '/reset-password' | '/signup'
+  to:
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/signup'
+    | '/equipments'
+    | '/kits'
+    | '/maintenance'
+    | '/movements'
+    | '/schedule'
+    | '/settings'
+    | '/users'
+    | '/work-orders'
+    | '/'
   id:
     | '__root__'
     | '/_authenticated'
@@ -74,10 +180,19 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/signup'
+    | '/_authenticated/equipments'
+    | '/_authenticated/kits'
+    | '/_authenticated/maintenance'
+    | '/_authenticated/movements'
+    | '/_authenticated/schedule'
+    | '/_authenticated/settings'
+    | '/_authenticated/users'
+    | '/_authenticated/work-orders'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthenticatedRoute: typeof AuthenticatedRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -121,11 +236,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/': {
+      id: '/_authenticated/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/work-orders': {
+      id: '/_authenticated/work-orders'
+      path: '/work-orders'
+      fullPath: '/work-orders'
+      preLoaderRoute: typeof AuthenticatedWorkOrdersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/schedule': {
+      id: '/_authenticated/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof AuthenticatedScheduleRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/movements': {
+      id: '/_authenticated/movements'
+      path: '/movements'
+      fullPath: '/movements'
+      preLoaderRoute: typeof AuthenticatedMovementsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/maintenance': {
+      id: '/_authenticated/maintenance'
+      path: '/maintenance'
+      fullPath: '/maintenance'
+      preLoaderRoute: typeof AuthenticatedMaintenanceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/kits': {
+      id: '/_authenticated/kits'
+      path: '/kits'
+      fullPath: '/kits'
+      preLoaderRoute: typeof AuthenticatedKitsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/equipments': {
+      id: '/_authenticated/equipments'
+      path: '/equipments'
+      fullPath: '/equipments'
+      preLoaderRoute: typeof AuthenticatedEquipmentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedEquipmentsRoute: typeof AuthenticatedEquipmentsRoute
+  AuthenticatedKitsRoute: typeof AuthenticatedKitsRoute
+  AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
+  AuthenticatedMovementsRoute: typeof AuthenticatedMovementsRoute
+  AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
+  AuthenticatedWorkOrdersRoute: typeof AuthenticatedWorkOrdersRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedEquipmentsRoute: AuthenticatedEquipmentsRoute,
+  AuthenticatedKitsRoute: AuthenticatedKitsRoute,
+  AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
+  AuthenticatedMovementsRoute: AuthenticatedMovementsRoute,
+  AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
+  AuthenticatedWorkOrdersRoute: AuthenticatedWorkOrdersRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  AuthenticatedRoute: AuthenticatedRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
