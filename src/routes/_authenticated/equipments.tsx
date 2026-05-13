@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Search, Boxes } from "lucide-react";
+import { Plus, Search, Boxes, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/equipments")({ component: EquipmentsPage });
 
@@ -20,7 +21,13 @@ function EquipmentsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [category, setCategory] = useState<string>("all");
-  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState({ name: "", brand: "", model: "", category_id: "", quantity: 1 });
+  const [submitting, setSubmitting] = useState(false);
 
   const { data: cats } = useQuery({
     queryKey: ["categories"],
@@ -53,7 +60,7 @@ function EquipmentsPage() {
     };
     const { error } = await supabase.from("equipments").insert(payload);
     if (error) toast.error(error.message);
-    else { toast.success("Equipamento cadastrado"); setOpen(false); qc.invalidateQueries({ queryKey: ["equipments"] }); }
+    else { toast.success("Equipamento cadastrado"); setCreateOpen(false); qc.invalidateQueries({ queryKey: ["equipments"] }); }
   };
 
   return (
@@ -62,7 +69,7 @@ function EquipmentsPage() {
         title="Equipamentos"
         description="Catálogo completo do inventário"
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90"><Plus className="mr-2 h-4 w-4" /> Novo</Button>
             </DialogTrigger>
