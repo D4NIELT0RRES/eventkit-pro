@@ -10,6 +10,7 @@ import { ListEquipmentsUseCase } from '../application/use-cases/equipment/ListEq
 import { GetEquipmentDetailUseCase } from '../application/use-cases/equipment/GetEquipmentDetailUseCase';
 import { UpdateEquipmentUseCase } from '../application/use-cases/equipment/UpdateEquipmentUseCase';
 import { DeleteEquipmentUseCase } from '../application/use-cases/equipment/DeleteEquipmentUseCase';
+import { AdjustStockUseCase } from '../application/use-cases/equipment/AdjustStockUseCase';
 import { RegisterMovementUseCase } from '../application/use-cases/movement/RegisterMovementUseCase';
 import { ListMovementsUseCase } from '../application/use-cases/movement/ListMovementsUseCase';
 import { CreateKitUseCase } from '../application/use-cases/kit/CreateKitUseCase';
@@ -33,6 +34,7 @@ export interface DIContainer {
   getEquipmentDetailUseCase: GetEquipmentDetailUseCase;
   updateEquipmentUseCase: UpdateEquipmentUseCase;
   deleteEquipmentUseCase: DeleteEquipmentUseCase;
+  adjustStockUseCase: AdjustStockUseCase;
   registerMovementUseCase: RegisterMovementUseCase;
   listMovementsUseCase: ListMovementsUseCase;
   createKitUseCase: CreateKitUseCase;
@@ -62,6 +64,7 @@ export function createDIContainer(supabase: SupabaseClient): DIContainer {
   const getEquipmentDetailUseCase = new GetEquipmentDetailUseCase(equipmentRepository);
   const updateEquipmentUseCase = new UpdateEquipmentUseCase(equipmentRepository);
   const deleteEquipmentUseCase = new DeleteEquipmentUseCase(equipmentRepository);
+  const adjustStockUseCase = new AdjustStockUseCase(equipmentRepository);
 
   // Use Cases - Movement
   const registerMovementUseCase = new RegisterMovementUseCase(
@@ -85,7 +88,8 @@ export function createDIContainer(supabase: SupabaseClient): DIContainer {
   const equipmentService = new EquipmentService(
     createEquipmentUseCase,
     listEquipmentsUseCase,
-    getEquipmentDetailUseCase
+    getEquipmentDetailUseCase,
+    adjustStockUseCase
   );
 
   const movementService = new MovementService(registerMovementUseCase, listMovementsUseCase);
@@ -102,6 +106,7 @@ export function createDIContainer(supabase: SupabaseClient): DIContainer {
     getEquipmentDetailUseCase,
     updateEquipmentUseCase,
     deleteEquipmentUseCase,
+    adjustStockUseCase,
     registerMovementUseCase,
     listMovementsUseCase,
     createKitUseCase,
