@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Boxes,
-  Package,
   ArrowLeftRight,
   ClipboardList,
   CalendarRange,
@@ -22,9 +21,8 @@ const GROUPS: { label: string; items: NavItem[]; adminOnly?: boolean }[] = [
   {
     label: "Operação",
     items: [
-      { to: "/", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/equipments", label: "Equipamentos", icon: Boxes },
-      { to: "/kits", label: "Kits", icon: Package },
+      { to: "/", label: "Assistente Virtual", icon: LayoutDashboard },
+      { to: "/equipments", label: "Estoque de equipamentos", icon: Boxes },
       { to: "/movements", label: "Movimentações", icon: ArrowLeftRight },
     ],
   },
@@ -32,8 +30,8 @@ const GROUPS: { label: string; items: NavItem[]; adminOnly?: boolean }[] = [
     label: "Eventos",
     items: [
       { to: "/work-orders", label: "Ordens de Serviço", icon: ClipboardList },
-      { to: "/schedule", label: "Agenda & Logística", icon: CalendarRange },
-      { to: "/maintenance", label: "Manutenção", icon: Wrench },
+      { to: "/schedule", label: "Calendário", icon: CalendarRange },
+      { to: "/maintenance", label: "Manutenção de Equipamento", icon: Wrench },
     ],
   },
   {

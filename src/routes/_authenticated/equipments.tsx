@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Search, Boxes, Trash2 } from "lucide-react";
+import { Plus, Search, Boxes } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -16,6 +16,66 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export const Route = createFileRoute("/_authenticated/equipments")({ component: EquipmentsPage });
 
+const STATUS_OPTIONS = [
+  { value: "disponivel", label: "Disponível" },
+  { value: "em_uso", label: "Em uso" },
+  { value: "manutencao", label: "Manutenção" },
+  { value: "reservado", label: "Reservado" },
+  { value: "danificado", label: "Danificado" },
+];
+
+function StatusSelect({ equipmentId, currentStatus }: { equipmentId: string; currentStatus: string }) {
+  const qc = useQueryClient();
+  const [changing, setChanging] = useState(false);
+
+  async function handleChange(newStatus: string) {
+    if (newStatus === currentStatus) return;
+    setChanging(true);
+    const { error } = await supabase
+      .from("equipments")
+      .update({ status: newStatus })
+      .eq("id", equipmentId);
+
+    if (error) {
+      toast.error(error.message);
+      setChanging(false);
+      return;
+    }
+
+    if (newStatus === "manutencao") {
+      await supabase.from("maintenance").insert({
+        equipment_id: equipmentId,
+        status: "aberta",
+      });
+      toast.success("Equipamento enviado para Manutenção de Equipamento automaticamente");
+      qc.invalidateQueries({ queryKey: ["maintenance"] });
+    } else {
+      toast.success("Status atualizado");
+    }
+
+    qc.invalidateQueries({ queryKey: ["equipments"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    setChanging(false);
+  }
+
+  return (
+    <Select value={currentStatus} onValueChange={handleChange} disabled={changing}>
+      <SelectTrigger className="h-7 w-36 text-xs border-none bg-transparent p-0 focus:ring-0 focus:ring-offset-0">
+        <SelectValue>
+          <StatusBadge status={currentStatus} />
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {STATUS_OPTIONS.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value} className="text-xs">
+            <StatusBadge status={opt.value} />
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function EquipmentsPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -24,10 +84,6 @@ function EquipmentsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  // Form state
-  const [formData, setFormData] = useState({ name: "", brand: "", model: "", category_id: "", quantity: 1 });
-  const [submitting, setSubmitting] = useState(false);
 
   const { data: cats } = useQuery({
     queryKey: ["categories"],
@@ -60,18 +116,37 @@ function EquipmentsPage() {
     };
     const { error } = await supabase.from("equipments").insert(payload);
     if (error) toast.error(error.message);
-    else { toast.success("Equipamento cadastrado"); setCreateOpen(false); qc.invalidateQueries({ queryKey: ["equipments"] }); }
+    else {
+      toast.success("Equipamento cadastrado");
+      setCreateOpen(false);
+      qc.invalidateQueries({ queryKey: ["equipments"] });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    const { error } = await supabase.from("equipments").delete().eq("id", deleteId);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Equipamento removido");
+      qc.invalidateQueries({ queryKey: ["equipments"] });
+    }
+    setDeleteId(null);
+    setDeleting(false);
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Equipamentos"
+        title="Estoque de equipamentos"
         description="Catálogo completo do inventário"
         actions={
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90"><Plus className="mr-2 h-4 w-4" /> Novo</Button>
+              <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+                <Plus className="mr-2 h-4 w-4" /> Novo
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Novo equipamento</DialogTitle></DialogHeader>
@@ -93,7 +168,9 @@ function EquipmentsPage() {
                   </select>
                 </div>
                 <div className="grid gap-2"><Label>Localização</Label><Input name="location" placeholder="Galpão A · Prateleira 3" /></div>
-                <DialogFooter><Button type="submit" className="bg-gradient-primary text-primary-foreground">Cadastrar</Button></DialogFooter>
+                <DialogFooter>
+                  <Button type="submit" className="bg-gradient-primary text-primary-foreground">Cadastrar</Button>
+                </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
@@ -140,6 +217,7 @@ function EquipmentsPage() {
                 <th className="px-4 py-3 text-left">Qtd.</th>
                 <th className="px-4 py-3 text-left">Localização</th>
                 <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-left"></th>
               </tr>
             </thead>
             <tbody>
@@ -153,13 +231,38 @@ function EquipmentsPage() {
                   <td className="px-4 py-3 font-mono text-xs">{e.patrimony_no ?? "—"}</td>
                   <td className="px-4 py-3">{e.available_qty}/{e.quantity}</td>
                   <td className="px-4 py-3 text-muted-foreground">{e.location ?? "—"}</td>
-                  <td className="px-4 py-3"><StatusBadge status={e.status} /></td>
+                  <td className="px-4 py-3">
+                    <StatusSelect equipmentId={e.id} currentStatus={e.status} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setDeleteId(e.id)}
+                      className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      Remover
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover equipamento?</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-2 pt-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Removendo…" : "Remover"}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

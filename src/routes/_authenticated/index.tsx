@@ -119,7 +119,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 h-full overflow-hidden">
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 shrink-0">
         {statCards.map((c, i) => (
@@ -128,13 +128,14 @@ export default function Dashboard() {
       </div>
 
       {/* ── Main content: AI Chat + Equipment Panel ── */}
-      <div className="flex flex-1 gap-4 min-h-0 overflow-hidden" style={{ minHeight: 480 }}>
-        {/* AI Chat – hero / primary interaction */}
-        <div className="flex-1 min-w-0 overflow-hidden">
+      {/* O chat e a lista de equipamentos têm alturas independentes — o chat preenche o espaço restante */}
+      <div className="flex flex-1 gap-4 min-h-0 items-stretch overflow-hidden">
+        {/* AI Chat – ocupa todo o espaço vertical disponível, input sempre visível */}
+        <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
           <AIChat />
         </div>
 
-        {/* Equipment list – auto-updates after AI actions */}
+        {/* Equipment list – rola internamente, não interfere na altura do chat */}
         <div
           className="w-72 xl:w-80 shrink-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden"
         >

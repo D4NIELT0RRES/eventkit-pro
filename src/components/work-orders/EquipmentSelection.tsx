@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Search, Minus, X, Plus, AlertCircle } from 'lucide-react';
@@ -69,6 +68,7 @@ export function EquipmentSelection({
   const [filter, setFilter] = useState<string>(ALL_FILTER);
   const [quickAddCategory, setQuickAddCategory] = useState<CategoryRow | null>(null);
 
+  // Categorias em ordem alfabética
   const { data: categories = [] } = useQuery<CategoryRow[]>({
     queryKey: ['categories-ordered'],
     queryFn: async () => {
@@ -109,37 +109,6 @@ export function EquipmentSelection({
     },
   });
 
-  // Ordem das pills (segue o layout do screenshot — categorias chave primeiro)
-  const PILL_ORDER = [
-    'consoles',
-    'caixas-de-som',
-    'rack-amplificadores',
-    'microfones',
-    'mic-sem-fio-iem',
-    'ac-energia',
-    'cabos-ac-speakers-sinal',
-    'multi-cabos-sub-snake',
-    'perifericos-processadores',
-    'dj-playback',
-    'back-line',
-    'estrutura-rigging',
-    'acessorios-suportes',
-    'consumiveis-fitas',
-  ];
-
-  const orderedCategories = useMemo(() => {
-    const map = new Map(categories.map((c) => [c.slug, c]));
-    const ordered: CategoryRow[] = [];
-    for (const slug of PILL_ORDER) {
-      const c = map.get(slug);
-      if (c) {
-        ordered.push(c);
-        map.delete(slug);
-      }
-    }
-    return ordered.concat(Array.from(map.values()));
-  }, [categories]);
-
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return equipment.filter((eq) => {
@@ -153,21 +122,19 @@ export function EquipmentSelection({
     });
   }, [equipment, filter, search]);
 
-  // Agrupa por categoria preservando a ordem de PILL_ORDER
+  // Agrupado por categoria em ordem alfabética
   const grouped = useMemo(() => {
     const groups = new Map<string, { category: CategoryRow; items: EquipmentRow[] }>();
     for (const eq of filtered) {
-      const cat = orderedCategories.find((c) => c.id === eq.categoryId);
+      const cat = categories.find((c) => c.id === eq.categoryId);
       if (!cat) continue;
       if (!groups.has(cat.id)) groups.set(cat.id, { category: cat, items: [] });
       groups.get(cat.id)!.items.push(eq);
     }
-    return Array.from(groups.values()).sort(
-      (a, b) =>
-        orderedCategories.findIndex((c) => c.id === a.category.id) -
-        orderedCategories.findIndex((c) => c.id === b.category.id),
+    return Array.from(groups.values()).sort((a, b) =>
+      a.category.name.localeCompare(b.category.name, 'pt-BR')
     );
-  }, [filtered, orderedCategories]);
+  }, [filtered, categories]);
 
   const selectedCount = selectedItems.filter((i) => i.checked).length;
 
@@ -248,7 +215,7 @@ export function EquipmentSelection({
         </div>
       </div>
 
-      {/* Pills de categoria */}
+      {/* Pills de categoria — ordem alfabética */}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -261,7 +228,7 @@ export function EquipmentSelection({
         >
           Todos
         </button>
-        {orderedCategories.map((c) => (
+        {categories.map((c) => (
           <button
             key={c.id}
             type="button"
@@ -322,7 +289,6 @@ export function EquipmentSelection({
                 </Button>
               </div>
 
-              {/* Linhas */}
               {items.map((eq) => {
                 const item = selectedItems.find((i) => i.itemId === eq.id);
                 const isSelected = item?.checked ?? false;
