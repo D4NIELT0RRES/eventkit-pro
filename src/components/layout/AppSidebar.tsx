@@ -11,6 +11,7 @@ import {
   Users,
   Settings,
   Radio,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -89,7 +90,13 @@ export function AppSidebar() {
                         />
                       )}
                       <item.icon className="h-4 w-4 shrink-0" />
-                      <span>{item.label}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {item.to === "/" && active && (
+                        <span className="flex items-center gap-0.5 rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold text-primary leading-none">
+                          <Sparkles className="h-2.5 w-2.5" />
+                          IA
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
