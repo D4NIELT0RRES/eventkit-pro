@@ -1,21 +1,84 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Bot, Loader2, Sparkles, RefreshCw } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { Send, Bot, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { callAIAgent } from "@/lib/ai-agent.server";
 import { ChatMessage } from "./ChatMessage";
 import type { LocalMessage } from "./ChatMessage";
+import type { AIAction, EquipmentRow } from "@/lib/ai-agent.server";
 
-// ─── Suggestion prompts shown on first load ───────────────────────────────────
+// ─── Initial suggestions ──────────────────────────────────────────────────────
 
-const SUGGESTIONS = [
+const INITIAL_SUGGESTIONS = [
   "Quais equipamentos temos disponíveis?",
   "Adicionar 2 caixas de som JBL no depósito",
   "Resumo do inventário",
   "Listar equipamentos em manutenção",
 ];
+
+// ─── Context-aware suggestions ────────────────────────────────────────────────
+
+function getContextualSuggestions(messages: LocalMessage[]): string[] {
+  const lastAction = [...messages]
+    .reverse()
+    .find((m) => m.role === "assistant" && m.action)?.action;
+
+  if (!lastAction) return INITIAL_SUGGESTIONS;
+
+  switch (lastAction.type) {
+    case "added": {
+      const eq = lastAction.equipment as EquipmentRow;
+      const cat = (eq.categories as { name?: string } | null)?.name ?? "";
+      return [
+        cat ? `Listar todos os equipamentos de ${cat}` : "Listar todos os equipamentos",
+        `Atualizar status de ${eq.name}`,
+        "Adicionar mais equipamentos",
+        "Ver resumo do inventário",
+      ];
+    }
+    case "listed": {
+      const { total } = lastAction;
+      return [
+        "Adicionar novo equipamento",
+        total > 0 ? "Listar equipamentos em manutenção" : "Quais equipamentos temos disponíveis?",
+        "Listar equipamentos disponíveis",
+        "Ver resumo do inventário",
+      ];
+    }
+    case "updated": {
+      const eq = lastAction.equipment as EquipmentRow;
+      return [
+        "Listar todos os equipamentos",
+        `Remover ${eq.name}`,
+        "Ver resumo do inventário",
+        "Adicionar novo equipamento",
+      ];
+    }
+    case "removed": {
+      return [
+        "Listar todos os equipamentos",
+        "Adicionar novo equipamento",
+        "Ver resumo do inventário",
+        "Listar equipamentos disponíveis",
+      ];
+    }
+    case "summary": {
+      const { byStatus } = lastAction;
+      const hasManutencao = (byStatus["manutencao"] ?? 0) > 0;
+      const hasEmUso = (byStatus["em_uso"] ?? 0) > 0;
+      return [
+        "Listar equipamentos disponíveis",
+        hasManutencao ? "Listar equipamentos em manutenção" : "Listar equipamentos em uso",
+        hasEmUso ? "Listar equipamentos em uso" : "Adicionar novo equipamento",
+        "Adicionar novo equipamento",
+      ].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+    }
+    default:
+      return INITIAL_SUGGESTIONS;
+  }
+}
 
 // ─── Welcome message ──────────────────────────────────────────────────────────
 
@@ -34,12 +97,16 @@ export function AIChat() {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Compute contextual suggestions from current message history
+  const suggestions = useMemo(() => getContextualSuggestions(messages), [messages]);
 
   // Build history for the AI (exclude loading/welcome messages)
   const buildHistory = useCallback(() => {
@@ -84,23 +151,22 @@ export function AIChat() {
 
         setMessages((prev) => [...prev.filter((m) => m.id !== "loading"), aiMsg]);
 
-        // Invalidate queries so the equipment list refreshes automatically
         if (result.action && ["added", "updated", "removed"].includes(result.action.type)) {
           queryClient.invalidateQueries({ queryKey: ["equipments"] });
           queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
         }
-      } catch {
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
         setMessages((prev) => [
           ...prev.filter((m) => m.id !== "loading"),
           {
             id: `err-${Date.now()}`,
             role: "assistant",
-            content: "⚠️ Erro ao processar. Verifique sua conexão e tente novamente.",
+            content: `Erro: ${msg}`,
           },
         ]);
       } finally {
         setLoading(false);
-        // Refocus input after response
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     },
@@ -112,10 +178,6 @@ export function AIChat() {
       e.preventDefault();
       send(input);
     }
-  }
-
-  function handleSuggestion(s: string) {
-    send(s);
   }
 
   function clearChat() {
@@ -164,24 +226,33 @@ export function AIChat() {
         <div ref={bottomRef} className="h-1" />
       </div>
 
-      {/* ── Suggestion chips (first load only) ── */}
-      {isFirstMessage && (
-        <div className="px-4 pb-3 flex flex-wrap gap-2 shrink-0">
-          {SUGGESTIONS.map((s) => (
+      {/* ── Contextual suggestion chips ── */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={suggestions.join("|")}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.18 }}
+          ref={suggestionsRef}
+          className="px-3 pb-2 pt-1 flex gap-2 overflow-x-auto shrink-0 scrollbar-none"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {suggestions.map((s) => (
             <button
               key={s}
-              onClick={() => handleSuggestion(s)}
-              className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+              onClick={() => !loading && send(s)}
+              disabled={loading}
+              className="flex-none whitespace-nowrap rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Sparkles className="h-3 w-3" />
               {s}
             </button>
           ))}
-        </div>
-      )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* ── Input ── */}
-      <div className="p-3 border-t border-border bg-card/60 shrink-0">
+      <div className="px-3 pb-3 border-t border-border bg-card/60 shrink-0 pt-2">
         <div className="flex gap-2 items-end">
           <Textarea
             ref={inputRef}
